@@ -8,10 +8,67 @@ font-family: sans-serif;
 buttons
 {
     font-family: serif;
-    font-display: 
     
+}
+#graph
+{
+border-style: solid;
+    align-content: center;
+
 }
 td
 {
     background-color: grey;
+    border-style: solid;
+    width: auto;
+    height: auto;
+}
+#tooltip
+{
+    
+    position: absolute;
+    display: block;
+    width: auto;
+    height: auto;
+ 
+    pointer-events: none;
+   margin-bottom: auto;
+   
+    
+}
+#tooltip.hidden
+{
+display: none;
+}
+.TTPSummary
+{
+font-weight: 900;
+    padding-bottom: 20px;
+}
+
+.ttp-grades
+{
+
+float: left;
+clear: both;
+font-size: 10px;
+overflow: auto;
+background-color: grey; 
+}
+
+.picture
+{
+    float: left;
+    clear: both;
+}
+.tt-subtitle
+{
+font-weight: 700;
+
+}
+body
+{
+height: 1000px;
+width: auto;
+
 }

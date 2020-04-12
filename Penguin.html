@@ -7,15 +7,19 @@
     </head>
     
 <body>
-    <div>
+    <div id= titles>
+    </div>
+<div id = tooltip class ="hidden">
+    
+    
     </div>
     <buttons>
     <table>
         <tr>
-            <td id =FvHW>Final vs HW Mean </td>
-            <td id = HWvQ>HW Mean vs Quiz Mean</td>
-            <td id= TvF>Test Mean vs Final Mean</td>
-            <td id = TvQ>Test Mean vs Quiz Mean</td>
+            <td id =FvHW>Final Grade vs HW Mean </td>
+            <td id = QvHW>Quiz Mean vs HW Mean</td>
+            <td id= FvT>Final Mean vs Test Mean</td>
+            <td id = QvT>Quiz Mean vs Test Mean</td>
         </tr>
         </table>
     </buttons>
@@ -31,7 +35,7 @@
 
 var setTitle = function(msg)
 {
-    d3.select("div")
+    d3.select("#titles")
         .text(msg);
 }
     var penguinPromise = d3.json("classData.json");
@@ -39,18 +43,17 @@ var setTitle = function(msg)
 penguinPromise.then(function(penguins)
                    {
     console.log(penguins);
-    setTitle("Average Homework Grade vs Grade on Final");
+    setTitle("Final Grade vs Average Homework Grade");
     displaySpread(penguins);
+  alternativeSpreads(penguins);
+    showToolTip(penguins);
                     },
                    function(error)
                     {
                     console.log("error", error)
     
                  })
-     
-//HW vs Final
-var displaySpread = function(penguin)
-{
+
     //returns grade
 var getGrade = function(penguin)
 {
@@ -62,47 +65,69 @@ var avgHW = function(penguin)
   return d3.mean(penguin.homework.map(getGrade));
     
 }
+//calculates average quiz
+var avgQuiz = function(penguin)
+{
+    return d3.mean(penguin.quizes.map(getGrade));
+}
+var avgTest = function(penguin)
+{
+    return d3.mean(penguin.test.map(getGrade));
+}
 //returns final grade
 var finalGrade = function(penguin)
 {
     return penguin.final.map(getGrade);
 }
-
-    var height = 600
+//clears all circles
+var clearSpread = function()
+{
+    d3.selectAll("#graph")
+        .remove();
+}
+//padding 
+var padding =20;
+     
+     
+     
+//HW vs Final spread
+var displaySpread = function(penguin)
+{    var height = 600
     var width = 600
 var dot = d3.select("svg" )
             .attr("height", height )
             .attr("width",  width )
             .attr("id","graph" )
+
+    
 //an array of arrays of final grades
 var finalG =  penguin.map(finalGrade);
 //array of average hw grades
 var HW = penguin.map(avgHW);
+ //creates the array of final grades
     var getFinalG = function(d)
     {
         return d[0];
     }
 //array of final grades
 var finalGArray = penguin.map(finalGrade).map(getFinalG);
-    console.log(finalGArray);
     
-//scaling 
+
+//scaling for FvsHW
+ //xscale=final grades
+ //yscale=homework
 var xScale = d3.scaleLinear()
-                .domain([d3.min(finalG, function(d){return d[0];}), d3.max(finalG, function(d){return d[0];})])
-                .range([0,width])
+                .domain([d3.min(finalGArray), d3.max(finalGArray)])
+                .range([padding,width-padding])
                   
 var yScale = d3.scaleLinear()
                 .domain([d3.min(HW), d3.max(HW)])
-                .range([0,height])
+                .range([height-padding,padding])
 
 
 
     //an array consisting of just the final grade and average homework grade
-    var things = [finalGArray, HW];
-    console.log(things);
-    console.log(HW);
-    console.log(finalG);
-    
+    var things = [finalGArray, HW];    
     
  //creating dots   
 dot.selectAll("circle")
@@ -117,8 +142,382 @@ dot.selectAll("circle")
          {
     return yScale(things[1][index]);
         })
-    .attr("r", 3)
+    .attr("r", 6)
+    .attr("fill", "red")  
+    .attr("id", function(penguin, index)
+{
+return index;
+
+})
+ 
+ dot.append("line")
+    .attr("x1", xScale(d3.mean(finalGArray)))
+    .attr("y1", yScale(0))
+    .attr("x2", xScale(d3.mean(finalGArray)))
+    .attr("y2", yScale(height))
+    .attr("stroke", "black")
+ 
+ dot.append("line")
+ .attr("x1",xScale(0) )
+    .attr("y1", yScale(d3.mean(HW)))
+    .attr("x2", xScale(width))
+    .attr("y2", yScale(d3.mean(HW)))
+    .attr("stroke", "black")
+ 
+showToolTip(penguin);
+}
+
+
+
+var alternativeSpreads = function(penguin)
+{ d3.select("#QvHW")
+    .on("click", function()
+       {
+    clearSpread();
+    setTitle("Average Quiz Grade vs Average Homework Grade");
+ d3.select("body")
+    .append("svg")
+    
+    var height = 600
+    var width = 600
+var dot = d3.select("svg" )
+            .attr("height", height )
+            .attr("width",  width )
+            .attr("id","graph" )
+//array of homework
+var HW = penguin.map(avgHW);
+    //array of avgQuiz grades
+var quizzes = penguin.map(avgQuiz);
+   
+//scaling 
+//xscale = avg quiz grades
+//yscale= avg homework grades
+  var xScale = d3.scaleLinear()
+                .domain([d3.min(quizzes), d3.max(quizzes)])
+                .range([padding,width-padding])
+                  
+var yScale = d3.scaleLinear()
+                .domain([d3.min(HW), d3.max(HW)])
+                .range([height-padding,padding])  
+var things = [quizzes, HW];
+ 
+ //creating dots   
+dot.selectAll("circle")
+    .data(penguin)
+    .enter()
+    .append("circle")
+    .attr("cx",  function(penguin, index)
+         {
+    return xScale(things[0][index]);
+})
+    .attr("cy", function(penguin, index)
+         {
+    return yScale(things[1][index]);
+        })
+    .attr("r", 6)
     .attr("fill", "red")
+     .attr("id", function(penguin, index)
+{
+return index;
+
+})
+     dot.append("line")
+    .attr("x1", xScale(d3.mean(quizzes)))
+    .attr("y1", yScale(0))
+    .attr("x2", xScale(d3.mean(quizzes)))
+    .attr("y2", yScale(height))
+    .attr("stroke", "black")
+ 
+ dot.append("line")
+ .attr("x1",xScale(0) )
+    .attr("y1", yScale(d3.mean(HW)))
+    .attr("x2", xScale(width))
+    .attr("y2", yScale(d3.mean(HW)))
+    .attr("stroke", "black")
+showToolTip(penguin);
+})
+
+d3.select("#FvT")
+    .on("click", function()
+       {
+    clearSpread();
+     setTitle("Average Test Grade vs Final Grade");
+    
+d3.select("body")
+    .append("svg")
+    
+     var height = 600
+    var width = 600
+var dot = d3.select("svg" )
+            .attr("height", height )
+            .attr("width",  width )
+            .attr("id","graph" )
+
+    
+//an array of arrays of final grades
+var finalG =  penguin.map(finalGrade);
+//array of average test grades
+var test = penguin.map(avgTest);
+ //creates the array of final grades
+    var getFinalG = function(d)
+    {
+        return d[0];
+    }
+//array of final grades
+var finalGArray = penguin.map(finalGrade).map(getFinalG);
+   
+
+//scaling for FvsHW
+ //xscale=final grades
+ //yscale=homework
+var xScale = d3.scaleLinear()
+                .domain([d3.min(finalGArray), d3.max(finalGArray)])
+                .range([padding,width-padding])
+                  
+var yScale = d3.scaleLinear()
+                .domain([d3.min(test), d3.max(test)])
+                .range([height-padding,padding])
+
+
+
+    //an array consisting of just the final grade and average homework grade
+    var things = [finalGArray, test];    
+    
+ //creating dots   
+dot.selectAll("circle")
+    .data(penguin)
+    .enter()
+    .append("circle")
+    .attr("cx",  function(penguin, index)
+         {
+    return xScale (things[0][index]);
+})
+    .attr("cy", function(penguin, index)
+         {
+    return yScale(things[1][index]);
+        })
+    .attr("r", 6)
+    .attr("fill", "red")
+    .attr("id", function(penguin, index)
+{
+return index;
+
+})
+  dot.append("line")
+    .attr("x1", xScale(d3.mean(finalGArray)))
+    .attr("y1", yScale(0))
+    .attr("x2", xScale(d3.mean(finalGArray)))
+    .attr("y2", yScale(height))
+    .attr("stroke", "black")
+ 
+ dot.append("line")
+ .attr("x1",xScale(0) )
+    .attr("y1", yScale(d3.mean(test)))
+    .attr("x2", xScale(width))
+    .attr("y2", yScale(d3.mean(test)))
+    .attr("stroke", "black")
+ showToolTip(penguin);   
+})
+ 
+ d3.select("#QvT")
+    .on("click", function()
+       {
+     clearSpread();
+    setTitle("Average Test Grade vs Average Quiz Grade");
+ d3.select("body")
+    .append("svg")
+    
+    var height = 600
+    var width = 600
+var dot = d3.select("svg" )
+            .attr("height", height )
+            .attr("width",  width )
+            .attr("id","graph" )
+//array of average test grade
+var test = penguin.map(avgTest);
+    //array of avgQuiz grades
+var quizzes = penguin.map(avgQuiz);
+    
+//scaling 
+//xscale = avg quiz grades
+//yscale= avg homework grades
+  var xScale = d3.scaleLinear()
+                .domain([d3.min(quizzes), d3.max(quizzes)])
+                .range([padding,width-padding])
+                  
+var yScale = d3.scaleLinear()
+                .domain([d3.min(test), d3.max(test)])
+                .range([height-padding,padding])  
+var things = [quizzes, test];
+   
+ //creating dots   
+dot.selectAll("circle")
+    .data(penguin)
+    .enter()
+    .append("circle")
+    .attr("cx",  function(penguin, index)
+         {
+    return xScale(things[0][index]);
+})
+    .attr("cy", function(penguin, index)
+         {
+    return yScale(things[1][index]);
+        })
+    .attr("r", 6)
+    .attr("fill", "red") 
+    .attr("id", function(penguin, index)
+{
+return index;
+
+})
+      dot.append("line")
+    .attr("x1", xScale(d3.mean(quizzes)))
+    .attr("y1", yScale(0))
+    .attr("x2", xScale(d3.mean(quizzes)))
+    .attr("y2", yScale(height))
+    .attr("stroke", "black")
+ 
+ dot.append("line")
+ .attr("x1",xScale(0) )
+    .attr("y1", yScale(d3.mean(test)))
+    .attr("x2", xScale(width))
+    .attr("y2", yScale(d3.mean(test)))
+    .attr("stroke", "black")
+ showToolTip(penguin);    
+     
+ })
+  
+ d3.select("#FvHW")
+    .on("click", function()
+       {
+     
+     clearSpread();
+     d3.select("body")
+        .append("svg")
+      setTitle("Final Grade vs Average Homework");
+     displaySpread(penguin);
+     showToolTip(penguin);
+ })
+    
+
+    
+}
+//creating the tool tip
+var drawToolTip = function (penguin, num)
+{
+    d3.select("#tooltip div")
+        .remove();
+    
+    
+    var xPosition = d3.event.pageX;
+    var yPosition = d3.event.pageY;
+
+    
+    var base = d3.select("#tooltip")
+        .classed("hidden",false)
+        .style("top",yPosition+"px")
+        .style("left",xPosition+"px")
+        .append("div")
+    
+    base.append("div")
+        .classed("TTPSummary",true)
+        .text("Penguin Summary");
+
+    
+    
+
+    
+    var summary = base.append("div")
+        .classed("ttp-grades",true);
+    var PPicture = summary.append("div")
+        .classed("picture", true)
+    
+    PPicture.append("div")
+        .classed("pic", true)
+        .append("img")
+        .attr("src", function()
+             {
+    return "imgs/" + penguin[num].picture;
+    })  
+        .attr("height", 100)
+        .attr("width", 100)
+    
+    var avgHWGrade = summary.append("div")
+        .classed("avgHWgrade",true);
+    
+    avgHWGrade.append("div")
+        .classed("tt-subtitle",true)
+        .text("Average Homework Grade:")
+    
+    avgHWGrade.append("div")
+        .classed("HW",true)
+        .text(function()
+             {
+        return d3.mean(penguin[num].homework.map(getGrade)).toFixed(2);
+    });
+
+    var avgQuizGrade = summary.append("div")
+        .classed("avgQuizGrade",true)
+    
+    avgQuizGrade.append("div")
+        .classed("tt-subtitle",true)
+        .text("Average Quiz Grade:")
+        
+    
+    avgQuizGrade.append("div")
+    .classed("quiz",true)
+    .text(function()
+         { 
+      return  d3.mean(penguin[num].quizes.map(getGrade)).toFixed(2);
+    })
+    
+      var avgTestGrade = summary.append("div")
+        .classed("avgTestGrade",true)
+    avgTestGrade.append("div")
+        .classed("tt-subtitle",true)
+        .text("Average Test Grade:") 
+    
+    avgTestGrade.append("div")
+        .classed("test", true)
+        .text(function()
+             {
+        return d3.mean(penguin[num].test.map(getGrade));
+    })   
+    var fGrade = summary.append("div")
+        .classed("finalGrade", true)
+    
+    fGrade.append("div")
+        .classed("tt-subtitle", true)
+        .text("Final Grade:")
+        
+    fGrade.append("div")
+            .classed("final", true)
+            .text(function()
+  {        return penguin[num].final.map(getGrade);
+    })
+  }
+   
+
+
+//displays the tooltip
+var showToolTip = function(penguin)
+{
+    d3.selectAll("circle")
+        .on("mouseover", function()
+           {
+        var num =this.id;
+    var number = parseFloat(num);
+    
+        drawToolTip(penguin, number)
+               
+           })
+                
+    
+        .on("mouseout", function()
+           {
+     
+    d3.select("#tooltip").classed("hidden", true);
+    })
 }
 
     </script>
